@@ -8,7 +8,7 @@
     <view class="wx-login">
       <view class="login-content">
         <uni-icons type="weixin" size="28" color="#fff"></uni-icons>
-        <text class="login">微信登陆</text>
+        <text class="login" @tap="toLogin">微信登陆</text>
       </view>
     </view>
 
@@ -33,7 +33,18 @@
   </view>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { instance } from '@/utils/request'
+
+const reqLogin=()=>{
+  return instance.get('/api/cms/banner')
+}
+
+const toLogin = async ()=>{
+  const res = await reqLogin()
+  console.log(res)
+}
+</script>
 
 <style lang="scss" scoped>
 .login_container {
