@@ -71,6 +71,8 @@
     <VList title="名师大咖" more="名师" link="/pages/tearch/list/list">
       <VCard v-for="(item, index) in (teacherList as any)" :key="item.id" :item="item" type="teacher" />
     </VList>
+
+    <v-top />
   </view>
 </template>
 
@@ -79,7 +81,7 @@ import VList from '../../components/v-list/index.vue'
 import VCard from '../../components/v-card/index.vue'
 import { ref } from 'vue'
 import { reqBannerList, reqCourseAndTeacherList } from '@/api/home'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onPageScroll } from '@dcloudio/uni-app'
 import type { BannerList, CourseList, TeacherList } from '@/types/home'
 import type { SwiperOnChangeEvent } from '@uni-helper/uni-app-types'
 import skeleton from '@/components/skeleton/skeleton.vue'
@@ -127,6 +129,12 @@ const getHomeList = async () => {
   loading.value = false
 }
 
+//监听页面的滚动，获取页面卷去的距离
+onPageScroll(({scrollTop})=>{
+  //通过事件总线，将页面滚动的距离传递给子组件
+  uni.$emit('scrollTop',scrollTop)
+})
+
 onLoad(() => {
   getBannerList()
   getHomeList()
@@ -134,7 +142,7 @@ onLoad(() => {
 </script>
 
 <style lang="scss" scoped>
-@import './skeleton.scss';
+@import '../../components/skeleton/skeleton.scss';
 .home-container {
   padding: 16rpx 0rpx;
 }
