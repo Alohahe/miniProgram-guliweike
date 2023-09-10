@@ -1,39 +1,42 @@
 <template>
   <view class="cart-item">
     <view class="item-image">
-      <image class="course" v-if="type === 'course'" src="../../static/images/course.jpg"></image>
-      <image class="avatar" v-else src="../../static/images/teacher.jpg"></image>
+      <image class="course" v-if="type === 'course'" :src="item.cover"></image>
+      <image class="avatar" v-else :src="item.avatar"></image>
       <view class="info" v-if="type === 'course'">
         <uni-icons type="staff" size="20" color="#fff"></uni-icons>
-        <text class="num">2366677次学习</text>
+        <text class="num">{{item.viewCount}}次学习</text>
       </view>
     </view>
     <block v-if="type === 'course'">
-      <view class="item-name"> JavaScript 精品课程 </view>
+      <view class="item-name"> {{ item.title }} </view>
       <view class="item-other">
         <text class="price">
           <text class="icon">￥</text>
-          <text>666</text>
+          <text>{{ item.price }}</text>
         </text>
-        <text class="num">1000 人购买</text>
+        <text class="num">{{ item.buyCount }} 人购买</text>
       </view>
     </block>
     <block v-else>
       <view class="item-name">
-        具有多年项目开发和教育培训经验，曾在日本野村证券主持开发金融证券项目，对金融数据处理具有丰富的经验。曾为北京积水潭医院主持开发过网络预约，挂号，分诊系统等。对主流框架Spring、Struts2、Hibernate、MyBatis、SpringMVC、SpringBoot、SpringCloud有深入的研究。
+        {{ item.intro }}
       </view>
-      <view class="teacher"> 雷老师 </view>
+      <view class="teacher"> {{ item.name }} </view>
     </block>
   </view>
 </template>
 
 <script lang="ts" setup>
-withDefaults(
+import type { CourseList, TeacherList } from '@/types/home';
+
+const props = withDefaults(
   defineProps<{
-    type: string
+    type:string,
+    item: CourseList & TeacherList
   }>(),
   {
-    type: 'course'
+    type: "course"
   }
 )
 </script>

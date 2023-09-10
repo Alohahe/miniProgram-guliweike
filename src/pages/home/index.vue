@@ -1,5 +1,6 @@
 <template>
-  <view class="container home-container">
+  <skeleton v-if="loading" />
+  <view v-else class="container home-container">
     <!-- 轮播图 -->
     <view class="swiper_box">
       <swiper
@@ -10,30 +11,17 @@
         indicator-color="#fff"
         indicator-active-color="#26B7FF"
         :duration="500"
+        @change="changeIndex"
       >
-        <swiper-item>
+        <swiper-item v-for="banner in bannerList" :key="banner.id">
           <view class="swiper_item uni_bg_red">
-            <image src="../../static/images/swiper/banner-1.png" />
-          </view>
-        </swiper-item>
-        <swiper-item>
-          <view class="swiper_item uni_bg_red">
-            <image src="../../static/images/swiper/banner-2.png" />
-          </view>
-        </swiper-item>
-        <swiper-item>
-          <view class="swiper_item uni_bg_red">
-            <image src="../../static/images/swiper/banner-3.png" />
+            <image :src="banner.imageUrl" />
           </view>
         </swiper-item>
       </swiper>
+
       <view class="indicator">
-        <text
-          class="circle"
-          v-for="(item, index) in 3"
-          :key="index"
-          :class="{ active: index === activeIndex }"
-        >
+        <text class="circle" v-for="(item, index) in bannerList.length" :key="index" :class="{ active: index === activeIndex }">
         </text>
       </view>
     </view>
@@ -76,26 +64,77 @@
 
     <!-- 热门课程 -->
     <VList title="热门课程" more="课程" type="course" link="/pages/list/index">
-      <VCard v-for="(item, index) in 3" :key="index" type="course" />
+      <VCard v-for="(item, index) in (courseList as any)" :key="item.id" :item="item" type="course" />
     </VList>
 
     <!-- 名师大咖 -->
     <VList title="名师大咖" more="名师" link="/pages/tearch/list/list">
-      <VCard v-for="(item, index) in 3" :key="index" type="teacher" />
+      <VCard v-for="(item, index) in (teacherList as any)" :key="item.id" :item="item" type="teacher" />
     </VList>
   </view>
 </template>
 
 <script lang="ts" setup>
-  import VList from '../../components/v-list/index.vue'
-  import VCard from '../../components/v-card/index.vue'
-  import { ref } from 'vue'
-  
-  const activeIndex = ref(0)
+import VList from '../../components/v-list/index.vue'
+import VCard from '../../components/v-card/index.vue'
+import { ref } from 'vue'
+import { reqBannerList, reqCourseAndTeacherList } from '@/api/home'
+import { onLoad } from '@dcloudio/uni-app'
+import type { BannerList, CourseList, TeacherList } from '@/types/home'
+import type { SwiperOnChangeEvent } from '@uni-helper/uni-app-types'
+import skeleton from '@/components/skeleton/skeleton.vue'
+
+const activeIndex = ref(0)
+//轮播图
+const bannerList = ref<BannerList[]>([])
+//课程列表
+const courseList = ref<CourseList[]>([])
+//讲师列表
+const teacherList = ref<TeacherList[]>([])
+//是否在请求数据中
+const loading = ref<boolean>(false)
+
+//获取首页轮播图
+const getBannerList = async () => {
+  //请求数据中为true
+  loading.value = true
+
+  const res = await reqBannerList()
+  // console.log(res)
+
+  //更新状态
+  bannerList.value = res.data.bannerList
+  //请求数据后为false
+  loading.value = false
+}
+
+const changeIndex = (e: SwiperOnChangeEvent) => {
+  // console.log(e)
+  activeIndex.value = e.detail.current
+}
+
+//获取首页讲师、课程列表
+const getHomeList = async () => {
+  //请求数据中为true
+  loading.value = true
+
+  const res = await reqCourseAndTeacherList()
+  // console.log(res)
+
+  courseList.value = res.data.courseList
+  teacherList.value = res.data.teacherList
+  //请求数据后为false
+  loading.value = false
+}
+
+onLoad(() => {
+  getBannerList()
+  getHomeList()
+})
 </script>
 
 <style lang="scss" scoped>
-  
+@import './skeleton.scss';
 .home-container {
   padding: 16rpx 0rpx;
 }
@@ -122,7 +161,7 @@
       }
     }
   }
-  
+
   .indicator {
     display: flex;
     justify-content: center;
@@ -131,7 +170,7 @@
     right: 0;
     bottom: 16rpx;
   }
-  
+
   .indicator .circle {
     width: 30rpx;
     height: 6rpx;
@@ -139,7 +178,7 @@
     border-radius: 6rpx;
     background-color: rgba(233, 228, 228, 0.9);
   }
-  
+
   .indicator .active {
     background-color: #4db5fb;
     width: 40rpx;
