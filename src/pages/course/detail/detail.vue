@@ -42,8 +42,8 @@
 
         <view id="anchor1" class="catalogue card">
           <view class="title"> 课程目录 </view>
-          <view class="catalogue_list" >
-            <uni-collapse accordion >
+          <view class="catalogue_list">
+            <uni-collapse accordion>
               <uni-collapse-item v-for="item in courseDetail.chapterList" :key="item.id" :title="item.title">
                 <view class="task_list">
                   <view class="task_items" v-for="(item1, index) in item.children" :key="item.id">
@@ -65,16 +65,24 @@
 
         <view id="anchor2" class="card">
           <view class="title">
-            <view class="title_left"> 学员评价 (100)</view>
-            <navigator url="/pages/course/comment/comment" class="title_right">
+            <view class="title_left"> 学员评价 ({{ total }})</view>
+            <navigator
+              :url="`/pages/course/comment/comment?courseId=${props.id}&teacherId=${courseDetail.course.teacherId}`"
+              class="title_right"
+            >
               <text>查看全部</text>
               <uni-icons type="right" color="#666c80" size="12"></uni-icons>
             </navigator>
           </view>
 
           <view class="comment_wrapper">
-            <v-comment></v-comment>
-            <navigator url="/pages/course/comment/comment" class="more-comment"> 点击查看更多评论 </navigator>
+            <v-comment :list="commentList"></v-comment>
+            <navigator
+              :url="`/pages/course/comment/comment?courseId=${props.id}&teacherId=${courseDetail.course.teacherId}`"
+              class="more-comment"
+            >
+              点击查看更多评论
+            </navigator>
           </view>
         </view>
       </view>
@@ -85,13 +93,17 @@
       <view class="bottom_wrap">
         <view class="bottom_button">
           <view class="favo_button" @tap="changeCollect(courseDetail.isCollect)">
-            <view :class="['bg', courseDetail.isCollect ? 'active':'']"></view>
-            <text >{{ courseDetail.isCollect ? '已收藏' : '收藏' }}</text>
+            <view :class="['bg', courseDetail.isCollect ? 'active' : '']"></view>
+            <text>{{ courseDetail.isCollect ? '已收藏' : '收藏' }}</text>
           </view>
         </view>
         <view class="bottom_main">
-          <view class="buy_button">
+          <view v-if="!courseDetail.isBuy" class="buy_button" @tap="toLearn">
             <text>去学习</text>
+          </view>
+
+          <view v-else class="buy_button" @tap="toBuy">
+            <text>去购买</text>
           </view>
         </view>
       </view>
@@ -105,15 +117,61 @@ import VComment from '../../../components/v-comment/v-comment.vue'
 import { ref } from 'vue'
 import type { ICourseDetail } from '@/types/course'
 import { onLoad } from '@dcloudio/uni-app'
+import { reqCommentList } from '@/api/comment'
+import type { ICommentListItem } from '@/types/comment'
+import { reqCreateOrder, reqOrderInfo, reqWeixinPay } from '@/api/pay'
+import useUserStore from '@/store/userStore'
+import { storeToRefs } from 'pinia'
+
+//实例化仓库
+const userStore = useUserStore()
+//解构实例
+const { token } = storeToRefs(userStore)
 
 //接受父组件传递的数据
 const props = defineProps<{
   id: string
 }>()
 
+//评论分页
+const pagination = ref({
+  page: 1,
+  limit: 10
+})
+
+const total = ref(0)
+const commentList = ref<ICommentListItem[]>([])
+
+//去学习
+const toLearn = () => {
+  uni.reLaunch({
+    url: '/pages/course/video/video'
+  })
+}
+
+//去购买
+const toBuy = async () => {
+  //判断用户是否登录
+  if (!token) {
+    //跳转至登录页
+    uni.reLaunch({
+      url: '/pages/login/index'
+    })
+    return
+  }
+  //创建订单
+  const res = await reqCreateOrder(props.id)
+  //获取订单信息
+  if (res.code === 200) {
+   //跳转至订单详情页
+   uni.navigateTo({
+    url:`/pages/order/index?orderId=${res.data.orderId}`
+   })
+  }
+}
 
 //收藏与取消收藏
-const changeCollect = async (status:boolean)=>{
+const changeCollect = async (status: boolean) => {
   //判断collectStatus状态
   status ? await reqCancelCollectCourse(props.id) : await reqCollectCourse(props.id)
 
@@ -132,8 +190,17 @@ const getCourseDetail = async () => {
   courseDetail.value = res.data
 }
 
+//获取评价列表
+const getCommentList = async () => {
+  const res = await reqCommentList(pagination.value.page, pagination.value.limit, props.id)
+
+  commentList.value = res.data.items
+  total.value = res.data.total
+}
+
 onLoad(() => {
   getCourseDetail()
+  getCommentList()
 })
 </script>
 

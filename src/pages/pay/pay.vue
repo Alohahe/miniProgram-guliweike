@@ -47,7 +47,7 @@
       </view>
 
       <view class="check">
-        <checkbox-group>
+        <checkbox-group @change="getAgree">
           <checkbox style="transform: scale(0.7)" />
           <text>同意</text>
         </checkbox-group>
@@ -59,12 +59,84 @@
         <text>实际支付 </text>
         <text>¥6666</text>
       </view>
-      <view class="pay-btn">去付款</view>
+      <view class="pay-btn" @tap="toPay">去付款</view>
     </view>
   </view>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { reqWeixinPay,reqOrderInfo, reqPayStatus } from '@/api/pay';
+import type { IOrderInfoRes } from '@/types/pay';
+import { onLoad } from '@dcloudio/uni-app';
+import type { CheckboxGroupOnChangeEvent } from '@uni-helper/uni-app-types';
+import { ref } from 'vue';
+
+//是否同意协议
+const isAgree = ref(false)
+const getAgree = (e:CheckboxGroupOnChangeEvent)=>{
+  isAgree.value = Boolean(e.detail.value[0])
+}
+
+const props = defineProps<{
+  orderId:string
+}>()
+
+const orderInfo = ref<IOrderInfoRes>({} as IOrderInfoRes)
+
+//去付款
+const toPay =async ()=>{
+  if(!isAgree.value){
+    uni.showToast({
+      title:'请选择同意协议',
+      icon:'none'
+    })
+    return
+  }
+
+  //发起预支付
+  const res = await reqWeixinPay(orderInfo.value.item.orderNo)
+  if(res.code === 200){
+    //发起微信支付
+    
+  }
+}
+
+//微信支付
+const weixinPay =async (data:UniNamespace.RequestPaymentOptions)=>{
+  //发起支付
+  const payRes = await uni.requestPayment(data)
+
+  //判断是否支付成功
+  if(payRes.errMsg === 'requestpayment:ok'){
+    //查询支付状态
+    const payStatus = await reqPayStatus(orderInfo.value.item.orderNo)
+
+    //支付成功，跳转至订单列表
+    if(payStatus.code === 200){
+      uni.redirectTo({
+        url:'/pages/order/index',
+        success:(res)=>{
+          //提示
+          uni.showToast({
+            title:'支付成功',
+            icon:'success'
+          })
+        }
+      })
+    }
+  }
+}
+
+//获取订单信息
+const getOrderInfo=async ()=>{
+  const res = await reqOrderInfo(props.orderId)
+  orderInfo.value = res.data
+}
+
+onLoad(()=>{
+  getOrderInfo()
+})
+</script>
 
 <style lang="scss" scoped>
 .pay-wrap {

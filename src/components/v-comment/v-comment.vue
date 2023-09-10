@@ -1,22 +1,31 @@
 <template>
   <view class="comment-list">
-    <view v-for="item in 3" :key="item" class="comment-item">
+    <view v-for="item in props.list" :key="item.id" class="comment-item">
       <view class="logo">
-        <image src="../../static/images/course.jpg" />
+        <image :src="item.avatar" />
       </view>
       <view class="content-wrap">
-        <view class="name">老张</view>
+        <view class="name">{{ item.nickname }}</view>
         <view class="date">
           <text>2023-03-21 20:44:02 </text>
           <uni-rate :touchable="false" :value="5" size="12" />
         </view>
-        <view class="content">我是谁？我从哪来？</view>
+        <view class="content">{{ item.content }}</view>
       </view>
     </view>
   </view>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import type { ICommentListItem } from '@/types/comment';
+
+//接收父组件传递数据
+const props = withDefaults(defineProps<{
+  list:ICommentListItem[]
+}>(),{
+  list:[] as any
+})
+</script>
 
 <style lang="scss" scoped>
 .comment-list {
