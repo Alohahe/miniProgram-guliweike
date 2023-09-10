@@ -98,7 +98,7 @@
           </view>
         </view>
         <view class="bottom_main">
-          <view v-if="courseDetail.isBuy" class="buy_button" @tap="toLearn">
+          <view v-if="!courseDetail.isBuy" class="buy_button" @tap="toLearn">
             <text>去学习</text>
           </view>
 
@@ -145,7 +145,7 @@ const commentList = ref<ICommentListItem[]>([])
 //去学习
 const toLearn = () => {
   uni.reLaunch({
-    url: '/pages/home/index'
+    url: '/pages/course/video/video'
   })
 }
 
