@@ -34,15 +34,48 @@
 </template>
 
 <script setup lang="ts">
-import { instance } from '@/utils/request'
+import { reqLogin,reqUserInfo } from '@/api/login'
+import useUserStore from '@/store/userStore'
+import { storeToRefs } from 'pinia';
 
-const reqLogin=()=>{
-  return instance.get('/api/cms/banner')
+//实例化useUserStore
+const userStore = useUserStore()
+//解构userStore中的值
+const {token,userInfo} = storeToRefs(userStore)
+
+const toLogin = () => {
+  //获取登录临时code
+  uni.login({
+    success:async (res)=>{
+      // console.log(res)
+      const {code} = res
+      //用临时code发送登录请求，获取token
+      const {data} = await reqLogin(code)
+      //将token存入本地
+      uni.setStorageSync('token',data.token)
+      //将token存入store
+      userStore.setToken(data.token)
+
+      //获取用户信息
+      getUserInfo()
+
+      //跳转至首页
+      uni.reLaunch({
+        url: '/pages/home/index'
+      });
+    }
+  })
 }
 
-const toLogin = async ()=>{
-  const res = await reqLogin()
-  console.log(res)
+//获取用户信息
+const getUserInfo = async ()=>{
+  const res = await reqUserInfo()
+  // console.log(res)
+
+  //将用户信息存储到本地
+  uni.setStorageSync('userInfo',res.data.item)
+  //将用户信息存储到store
+  userStore.setUserInfo(res.data.item)
 }
 </script>
 
