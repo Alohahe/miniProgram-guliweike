@@ -1,23 +1,23 @@
 <template>
-  <view class="container">
+  <view class="container" v-if="courseDetail.course && courseDetail.course.id">
     <!-- 课程内容 -->
     <view class="course">
       <!-- banner 图片 -->
       <view class="banner">
-        <image src="../../../static/images/coursebanner.jpg" />
+        <image :src="courseDetail.course.cover" />
       </view>
 
       <view class="info">
         <view class="price">
           <view class="price-info">
             <text>¥</text>
-            <text>21800</text>
+            <text>{{ courseDetail.course.price }}</text>
           </view>
-          <view class="buy_count">购买人数 210699</view>
+          <view class="buy_count">购买人数 {{ courseDetail.course.buyCount }}</view>
         </view>
-        <view class="name">XHTML CSS2 JS整站制作教程课程学习</view>
+        <view class="name">{{ courseDetail.course.title }}</view>
         <view class="tag_list">
-          <view class="tag_item">web 前端</view>
+          <view class="tag_item">{{ courseDetail.course.subjectLevelOne }}</view>
         </view>
       </view>
 
@@ -27,33 +27,31 @@
 
           <navigator url="/pages/tearch/detail/detail" class="teacher_info">
             <view class="avatar">
-              <image src="../../../static/images/course.jpg" />
+              <image :src="courseDetail.course.avatar" />
             </view>
             <view class="teacher_desc">
-              <view class="teacher_name">高级讲师-雷老师</view>
+              <view class="teacher_name">{{ courseDetail.course.teacherName }}</view>
               <view class="teacher_intro">
-                中国人民大学软件工程硕士。精通java核心框架、大数据Hadoop、Spark技术，曾先后就职于南天软件、用友金融、中植集团、百合贷，任技术经理、项目经理、技术部负责人。主持开发了中信银行、国家电网、中植集团、东方资产等大型企业的金融类系统，也对时下流行的互联网金融有深入的研究。十余年的项目经历，练就了纯厚的技术底蕴和丰富的职场经验。
+                {{ courseDetail.course.intro }}
               </view>
             </view>
           </navigator>
           <view class="title course-title"> 课程详情 </view>
-          <view class="course-detail">
-            中国人民大学软件工程硕士。精通java核心框架、大数据Hadoop、Spark技术，曾先后就职于南天软件、用友金融、中植集团、百合贷，任技术经理、项目经理、技术部负责人。主持开发了中信银行、国家电网、中植集团、东方资产等大型企业的金融类系统，也对时下流行的互联网金融有深入的研究。十余年的项目经历，练就了纯厚的技术底蕴和丰富的职场经验。
-          </view>
+          <view class="course-detail" v-html="courseDetail.course.description"> </view>
         </view>
 
         <view id="anchor1" class="catalogue card">
           <view class="title"> 课程目录 </view>
-          <view class="catalogue_list">
-            <uni-collapse accordion>
-              <uni-collapse-item title="第一章: 前端入门">
+          <view class="catalogue_list" >
+            <uni-collapse accordion >
+              <uni-collapse-item v-for="item in courseDetail.chapterList" :key="item.id" :title="item.title">
                 <view class="task_list">
-                  <view class="task_items">
+                  <view class="task_items" v-for="(item1, index) in item.children" :key="item.id">
                     <image
                       class="task_type"
                       src="https://cdn-cos-ke.myoed.com/ke_proj/mobilev2/m-core/f1c59a1527e075f6ebfba3d7ac605f07.png"
                     />
-                    <view class="task_title">1. 什么是编程语言</view>
+                    <view class="task_title">{{ index + 1 }}. {{ item1.title }}</view>
                     <image
                       class="task_icon"
                       src="https://cdn-cos-ke.myoed.com/ke_proj/mobilev2/m-core/064fdd1eb99fcb8bef80085f2b548e4b.png"
@@ -86,9 +84,9 @@
     <view class="bottom_tabbar">
       <view class="bottom_wrap">
         <view class="bottom_button">
-          <view class="favo_button">
-            <view :class="['bg', 'active']"></view>
-            <text>收藏</text>
+          <view class="favo_button" @tap="changeCollect(courseDetail.isCollect)">
+            <view :class="['bg', courseDetail.isCollect ? 'active':'']"></view>
+            <text >{{ courseDetail.isCollect ? '已收藏' : '收藏' }}</text>
           </view>
         </view>
         <view class="bottom_main">
@@ -102,7 +100,41 @@
 </template>
 
 <script setup lang="ts">
+import { reqCancelCollectCourse, reqCollectCourse, reqCourseDetail } from '@/api/course'
 import VComment from '../../../components/v-comment/v-comment.vue'
+import { ref } from 'vue'
+import type { ICourseDetail } from '@/types/course'
+import { onLoad } from '@dcloudio/uni-app'
+
+//接受父组件传递的数据
+const props = defineProps<{
+  id: string
+}>()
+
+
+//收藏与取消收藏
+const changeCollect = async (status:boolean)=>{
+  //判断collectStatus状态
+  status ? await reqCancelCollectCourse(props.id) : await reqCollectCourse(props.id)
+
+  //重新获取课程详情
+  getCourseDetail()
+}
+
+//课程详情
+const courseDetail = ref<ICourseDetail>({} as ICourseDetail)
+
+//获取课程详情
+const getCourseDetail = async () => {
+  const res = await reqCourseDetail(props.id)
+
+  //更新状态
+  courseDetail.value = res.data
+}
+
+onLoad(() => {
+  getCourseDetail()
+})
 </script>
 
 <style scoped lang="scss">
@@ -317,20 +349,20 @@ import VComment from '../../../components/v-comment/v-comment.vue'
   // width: 100%;
   // border-radius: 16rpx;
   // box-sizing: border-box;
-  
+
   position: fixed;
   width: 100%;
   bottom: 0;
   left: 0;
   box-sizing: border-box;
   background: #fff;
-  
+
   .bottom_wrap {
     display: flex;
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .bottom_button {
     flex: 1;
     padding: 6px 0;
